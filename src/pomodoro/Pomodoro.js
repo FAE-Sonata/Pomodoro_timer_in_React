@@ -1,7 +1,11 @@
 import React, { useState } from "react";
-import classNames from "../utils/class-names";
+// import classNames from "../utils/class-names";
 import useInterval from "../utils/useInterval";
 import { minutesToDuration, secondsToDuration } from "../utils/duration";
+import FocusIncrements from "./FocusIncrements";
+import BreakIncrements from "./BreakIncrements";
+import PlayPauseButton from "./PlayPauseButton";
+import StopButton from "./StopButton";
 
 function Pomodoro() {
   // Timer starts out paused
@@ -24,8 +28,8 @@ function Pomodoro() {
     return minutesToDuration(ms / MINUTE_MILLISECONDS);
   }
 
-  /* next four functions ensure that lower / upper bounds of focus (break)
-  length not breached */
+  /* next four functions (supplied to two components) ensure that lower / upper
+  bounds of focus (break) length not breached */
   const decreaseFocus = () => {
     if(focusLength > FOCUS_LIMITS[0] * MINUTE_MILLISECONDS)
       setFocusLength((prevLength) => {return (prevLength -
@@ -57,15 +61,7 @@ function Pomodoro() {
       // play alarm upon time expiry
       new Audio(`https://bigsoundbank.com/UPLOAD/mp3/1482.mp3`).play();
       setElapsedMilliseconds(0);
-      if(isFocus) {
-        setIsFocus(false);
-        return;
-      }
-      // new focus session
-      else {
-        setIsFocus(true);
-        return;
-      }
+      setIsFocus((prev) => !prev);// focus to break; break to new focus session
     }
     // increment by 1s (1000 ms)
     else setElapsedMilliseconds((ms) => ms + 1000);
@@ -119,62 +115,16 @@ function Pomodoro() {
   return (
     <div className="pomodoro">
       <div className="row">
-        <div className="col">
-          <div className="input-group input-group-lg mb-2">
-            <span className="input-group-text" data-testid="duration-focus">
-              Focus Duration: {displayMinutes(focusLength)}
-            </span>
-            <div className="input-group-append">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                data-testid="decrease-focus"
-                disabled={isActiveSession}
-                onClick={decreaseFocus}
-              >
-                <span className="oi oi-minus" />
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                data-testid="increase-focus"
-                disabled={isActiveSession}
-                onClick={increaseFocus}
-              >
-                <span className="oi oi-plus" />
-              </button>
-            </div>
-          </div>
-        </div>
-        <div className="col">
-          <div className="float-right">
-            <div className="input-group input-group-lg mb-2">
-              <span className="input-group-text" data-testid="duration-break">
-                Break Duration: {displayMinutes(breakLength)}
-              </span>
-              <div className="input-group-append">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  data-testid="decrease-break"
-                  disabled={isActiveSession}
-                  onClick={decreaseBreak}
-                >
-                  <span className="oi oi-minus" />
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  data-testid="increase-break"
-                  disabled={isActiveSession}
-                  onClick={increaseBreak}
-                >
-                  <span className="oi oi-plus" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <FocusIncrements focusObj={{
+          focusLength: focusLength,
+          increaseFn: increaseFocus,
+          decreaseFn: decreaseFocus,
+        }} isActiveSession = {isActiveSession}/>
+        <BreakIncrements breakObj={{
+          breakLength: breakLength,
+          increaseFn: increaseBreak,
+          decreaseFn: decreaseBreak,
+        }} isActiveSession = {isActiveSession}/>
       </div>
       <div className="row">
         <div className="col">
@@ -183,30 +133,10 @@ function Pomodoro() {
             role="group"
             aria-label="Timer controls"
           >
-            <button
-              type="button"
-              className="btn btn-primary"
-              data-testid="play-pause"
-              title="Start or pause timer"
-              onClick={playPause}
-            >
-              <span
-                className={classNames({
-                  oi: true,
-                  "oi-media-play": !isTimerRunning,
-                  "oi-media-pause": isTimerRunning,
-                })}
-              />
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              title="Stop the session"
-              disabled={!isActiveSession}
-              onClick={stopSession}
-            >
-              <span className="oi oi-media-stop" />
-            </button>
+            <PlayPauseButton handlePlayPause={playPause}
+              isTimerRunning={isTimerRunning}/>
+            <StopButton handleStop={stopSession}
+              isActiveSession={isActiveSession}/>
           </div>
         </div>
       </div>
